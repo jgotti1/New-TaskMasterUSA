@@ -19,12 +19,14 @@
 This web application allows employers to track and assign tasks to their users within their individual organization. Normal users can log in to track what tasks have been assigned, and check them off upon completion. 
 
 ## DemoAccount 
+Try it live at https://taskmaster.margotticode.com - use a demo login below, or sign up your own organization.
+
 * ADMIN Login: user: demo@gmail.com password: Password123!
 * Regular User Login: mike@gmail.com password: Password123!
 
 ## Deployment
 Hosted on [Railway](https://railway.com) as a single project with two services:
-* App (frontend + backend): https://taskmaster-app-production-5e8e.up.railway.app - one Node/Express service that serves the API under `/api` and the built React app from `client/build`. Deploys automatically on every push to `main`.
+* App (frontend + backend): https://taskmaster.margotticode.com (custom domain via a CNAME and a verification TXT record at Bluehost; the Railway address taskmaster-app-production-5e8e.up.railway.app also works) - one Node/Express service that serves the API under `/api` and the built React app from `client/build`. Deploys automatically on every push to `main`.
 * Database: MongoDB (`mongo:8.0` image with a volume). The app connects to it over Railway's private network.
 
 Railway builds with `npm run build` (installs and builds the client, installs the server) and starts with `npm start` (`node server/server.js`), both defined in the root `package.json`.
@@ -133,8 +135,8 @@ The block below is machine-readable project info for a portfolio site (invisible
   "title": "TaskMaster",
   "category": "web app",
   "tagline": "Task management SaaS where admins assign work to their team and users check it off.",
-  "description": "TaskMaster lets an organization sign up, add its team, and assign prioritized, dated tasks to individual users. Admins get a dashboard of users and tasks (with overdue and in-progress counts) and can export data to Excel, while regular users see only their own tasks and mark them complete. Each organization's data is isolated and every API call is authenticated. To try it, log in as the admin (demo@gmail.com) or as a regular user (mike@gmail.com), both with the password Password123!",
-  "liveUrl": "https://taskmaster-app-production-5e8e.up.railway.app",
+  "description": "TaskMaster lets an organization sign up, add its team, and assign prioritized, dated tasks to individual users. Admins get a dashboard of users and tasks (with overdue and in-progress counts) and can export data to Excel, while regular users see only their own tasks and mark them complete. Each organization's data is isolated and every API call is authenticated. To try it, log in as the admin (demo@gmail.com) or as a regular user (mike@gmail.com), both with the password Password123!, or sign up your own organization.",
+  "liveUrl": "https://taskmaster.margotticode.com",
   "repoUrl": "https://github.com/jgotti1/New-TaskMasterUSA",
   "thumbnail": "https://raw.githubusercontent.com/jgotti1/New-TaskMasterUSA/main/docs/preview.jpg",
   "tech": [

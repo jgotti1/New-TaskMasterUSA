@@ -31,7 +31,7 @@ The server requires a `server/.env` (gitignored) with `CONNECTION_URL` (MongoDB 
 
 ## Deployment
 
-Hosted on Railway (project `taskmaster`, personal workspace) as two services: the app (`taskmaster-app`, deployed from GitHub `main`, auto-redeploys on push) and a MongoDB service (`mongo:8.0`). The app reaches Mongo over Railway's private network via `CONNECTION_URL=${{MongoDB.MONGO_URL}}/taskMasterUSA?authSource=admin`. Live at https://taskmaster-app-production-5e8e.up.railway.app. The old Atlas cluster no longer exists and its data was not migrated. To connect from a local machine, the Mongo service needs a public TCP proxy (the private domain is not reachable); remove it when not needed.
+Hosted on Railway (project `taskmaster`, personal workspace) as two services: the app (`taskmaster-app`, deployed from GitHub `main`, auto-redeploys on push) and a MongoDB service (`mongo:8.0`). The app reaches Mongo over Railway's private network via `CONNECTION_URL=${{MongoDB.MONGO_URL}}/taskMasterUSA?authSource=admin`. Live at https://taskmaster.margotticode.com (custom domain: CNAME `taskmaster` -> the Railway target plus a `_railway-verify.taskmaster` TXT record, both set at Bluehost, which hosts the `margotticode.com` DNS; the Railway address `taskmaster-app-production-5e8e.up.railway.app` also works). Demo logins: `demo@gmail.com` (admin) and `mike@gmail.com`, password `Password123!`. The old Atlas cluster no longer exists and its data was not migrated. To connect from a local machine, the Mongo service needs a public TCP proxy (the private domain is not reachable); remove it when not needed.
 
 ## Architecture
 
