@@ -1,0 +1,11 @@
+{
+  "name": "taskmasterusa",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix client ci && CI=false npm --prefix client run build && npm --prefix server ci",
+    "start": "node server/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
