@@ -105,6 +105,12 @@ const Navbar = () => {
           method: "GET",
           mode: "cors",
         });
+        // Expired or invalid token: send the user back to login
+        if (res.status === 401) {
+          handleLogout();
+          return;
+        }
+        if (!res.ok) return;
         const json = await res.json();
         let authenticated = false;
         for (const entry of json) {

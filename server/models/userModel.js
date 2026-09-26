@@ -36,6 +36,14 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
+// Never send the password hash to clients
+userSchema.set("toJSON", {
+  transform: (doc, ret) => {
+    delete ret.password;
+    return ret;
+  },
+});
+
 //signup method
 userSchema.statics.signup = async function (email, password, organization, first_name, last_name, isAdmin) {
   if (!email || !password) {

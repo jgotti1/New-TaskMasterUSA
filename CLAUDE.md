@@ -14,35 +14,41 @@ TaskMaster is a multi-tenant task management app: organizations sign up, admins 
 Run each from its own directory (`npm install` in both). No linting or test files exist beyond CRA defaults.
 
 ```bash
-# server (listens on PORT or 5000)
+# server (local API on PORT from server/.env; use 5001 because macOS uses 5000 for AirPlay)
 cd server && npm start              # node server.js
-cd server && npx nodemon server.js  # dev; the "dev start" script name contains a space, so `npm run` can't invoke it
+cd server && npm run dev            # nodemon
 
-# client (localhost:3000)
+# client (localhost:3000, proxies /api to localhost:5001 via "proxy" in client/package.json)
 cd client && npm start
-cd client && npm run build
 cd client && npm test               # react-scripts test (Jest); add `-- -t "name"` to filter
+
+# production build, run from the repo root (what Railway runs)
+npm run build                       # installs + builds client, installs server
+npm start                           # node server/server.js serves API and client/build on PORT
 ```
 
 The server requires a `server/.env` (gitignored) with `CONNECTION_URL` (MongoDB URI) and `SECRET` (JWT signing key). The server only starts listening after the Mongo connection succeeds.
 
+## Deployment
+
+Hosted on Railway (project `taskmaster`, personal workspace) as two services: the app (`taskmaster-app`, deployed from GitHub `main`, auto-redeploys on push) and a MongoDB service (`mongo:8.0`). The app reaches Mongo over Railway's private network via `CONNECTION_URL=${{MongoDB.MONGO_URL}}/taskMasterUSA?authSource=admin`. Live at https://taskmaster-app-production-5e8e.up.railway.app. The old Atlas cluster no longer exists and its data was not migrated. To connect from a local machine, the Mongo service needs a public TCP proxy (the private domain is not reachable); remove it when not needed.
+
 ## Architecture
 
-### Backend base URL is hardcoded in the client
-[client/src/api/fetchpaths.jsx](client/src/api/fetchpaths.jsx) holds every API URL as an exported constant. Dev (`localhost:5000`), Heroku, and Cyclic blocks are toggled by commenting/uncommenting; currently the Cyclic prod URLs are active. To develop locally against your own server, swap the active block (and don't commit that swap by accident). The README mentions AWS Amplify/Elastic Beanstalk deployment, which is out of date relative to this file.
+### Single-service deployment
+Express serves both the API and the built React app, so the client uses relative API paths ([client/src/api/fetchpaths.jsx](client/src/api/fetchpaths.jsx), all under `/api`) with no hardcoded backend URL. The API is mounted under `/api` (not at the root) so it does not collide with React routes such as `/user`. Anything else that is not a static file falls back to `client/build/index.html` for client-side routing.
 
 ### Server (`server/`)
-`server.js` mounts three routers: `/user`, `/tasks`, `/organizations`, each of which is `routes/*.js` → `controller/*.js` → `models/*.js`.
+`server.js` mounts three routers: `/api/user`, `/api/tasks`, `/api/organizations`, each of which is `routes/*.js` → `controller/*.js` → `models/*.js`.
 
-- **Tenancy is by string, not reference.** `User.organization` is the org *name* string; `Task.organization_id` and `Task.user_id` are also plain strings (`Task.user_id` holds the user's Mongo `_id` as a string). Task/user lookups are `GET /tasks/organization/:organization`, `GET /tasks/user/:user`, `GET /user/:organization`.
+- **Tenancy is by string, not reference.** `User.organization` is the org *name* string; `Task.organization_id` and `Task.user_id` are also plain strings (`Task.user_id` holds the user's Mongo `_id` as a string). Task/user lookups are `GET /api/tasks/organization/:organization`, `GET /api/tasks/user/:user`, `GET /api/user/:organization`. In practice `User.organization` holds the Organization document's `_id` as a string (set by `orgSignup`), and the client uses it to fetch the org name. A middleware in `server.js` collapses duplicate slashes because the client builds some URLs like `/api/tasks//organization/x`.
 - **Auth is JWT issued at login/signup** (`userController.createToken`, 1-day expiry, signed with `SECRET`). Login returns the whole session object (`email, token, userFirstName, userLastName, isAdmin, organization, _id`), which the client stores verbatim.
-- **`middleware/requireAuth.js` exists but is not applied anywhere** (`router.use(requireAuth)` in `routes/task.js` is commented out). All endpoints are currently unauthenticated, and `isAdmin` is enforced only by the client UI. Keep this in mind before assuming a route is protected.
+- **Authorization is enforced server-side** by `middleware/requireAuth.js` (verifies the Bearer token, loads `{_id, organization, isAdmin}` from the DB into `req.user`) and its `requireAdmin` companion. Only `POST /api/user/login` and `POST /api/organizations/signup` are public. Every controller scopes queries to `req.user.organization`; regular users can read only themselves and their own tasks and can only toggle `isComplete` on their own tasks; admins manage users/tasks in their own org only. The organization on signup/create requests is taken from the token, never the request body.
 - Signup/login validation (email format, `validator.isStrongPassword`, bcrypt hashing) lives in static methods on `userModel.js`.
-- `updateUser` spreads the whole request body into `findByIdAndUpdate`, so the client must never send a plaintext `password` through it.
+- `updateUser` whitelists `first_name, last_name, email, isAdmin`; passwords and `organization` cannot be changed through it. `userModel` strips `password` from all JSON output via a `toJSON` transform, so never rely on `select("-password")`, but never remove that transform either.
 
 ### Client (`client/src/`)
-- **Providers** (in `index.js`): `AuthContextProvider` → `TaskContextProvider` → `App`. Auth state is restored from `localStorage["user"]` in a `useEffect`; login/signup/logout live in `hooks/useLogin|useSignup|useLogout`. `TaskContextProvider` reads `user` from auth context and, on user change, fetches the org's tasks (admin) or the user's tasks (non-admin) into a reducer (`SET_/CREATE_/DELETE_/EDIT_Tasks`). It dereferences `user.isAdmin` without a null guard, so it relies on being rendered when `user` is set/restored. `UserContext` is defined but not wired into `index.js`.
+- **Providers** (in `index.js`): `AuthContextProvider` → `TaskContextProvider` → `App`. Auth state is restored from `localStorage["user"]` in a `useEffect`; `api/authInterceptors.js` (imported in `index.js`) wraps `window.fetch` and axios so every same-origin `/api` request automatically carries `Authorization: Bearer <token>`; login/signup/logout live in `hooks/useLogin|useSignup|useLogout`. `TaskContextProvider` reads `user` from auth context and, on user change, fetches the org's tasks (admin) or the user's tasks (non-admin) into a reducer (`SET_/CREATE_/DELETE_/EDIT_Tasks`). It dereferences `user.isAdmin` without a null guard, so it relies on being rendered when `user` is set/restored. `UserContext` is defined but not wired into `index.js`.
 - **Routing** (`App.js`): `/`, `/signup`, `/login` redirect based on `user`; `/user` is registered only when logged in. `pages/UserHome.jsx` branches on `user.isAdmin` between `components/admin/AdminHome` and `components/user/NormalUserHome`.
 - **Admin components** (`components/admin/`) fetch users of the org directly (not via context) and mutate tasks through `useTasksContext` dispatches plus API calls; Excel export (`xlsx`) is done only in `AdminDashboard`.
 - Styling is styled-components per file, with `responsive.js` exporting a `mobile()` media-query helper.
-- `client/static.json` (SPA fallback to `index.html`) is for static-host deployment of `client/build`.

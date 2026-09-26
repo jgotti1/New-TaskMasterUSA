@@ -1,15 +1,11 @@
 import express from "express";
 const router = express.Router();
 
-import { orgSignup, findAllOrgs, findOrgName } from "../controller/orgController.js";
+import { orgSignup, findOrgName } from "../controller/orgController.js";
+import requireAuth from "../middleware/requireAuth.js";
 
-import bodyParser from "body-parser";
-const jsonParser = bodyParser.json();
+router.post("/signup", orgSignup);
 
-router.get("/", findAllOrgs);
-
-router.post("/signup", jsonParser, orgSignup);
-
-router.get("/:organization", findOrgName)
+router.get("/:organization", requireAuth, findOrgName)
 
 export default router;

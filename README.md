@@ -23,9 +23,22 @@ This web application allows employers to track and assign tasks to their users w
 * Regular User Login: mike@gmail.com password: Password123!
 
 ## Deployment
-* Frontend Deployed: AWS Amplify https://www.taskmasterusa.com/
-* Backend Deployed: AWS Elastic Beanstalk  https://server.taskmasterusa.com
-* Database: MongoDB Atlas
+Hosted on [Railway](https://railway.com) as a single project with two services:
+* App (frontend + backend): https://taskmaster-app-production-5e8e.up.railway.app - one Node/Express service that serves the API under `/api` and the built React app from `client/build`. Deploys automatically on every push to `main`.
+* Database: MongoDB (`mongo:8.0` image with a volume). The app connects to it over Railway's private network.
+
+Railway builds with `npm run build` (installs and builds the client, installs the server) and starts with `npm start` (`node server/server.js`), both defined in the root `package.json`.
+
+Required environment variables on the app service:
+* `CONNECTION_URL` - MongoDB connection string (on Railway: `${{MongoDB.MONGO_URL}}/taskMasterUSA?authSource=admin`)
+* `SECRET` - secret used to sign JWTs
+
+> Previously hosted on AWS Amplify / Elastic Beanstalk with MongoDB Atlas, later Heroku and Cyclic. Those are gone, and the old database was not migrated.
+
+## Security
+* All API routes except login and organization sign-up require a JWT (`Authorization: Bearer <token>`), verified against the database on every request.
+* Users can only access data in their own organization. Regular users see only their own record and tasks and can only mark their own tasks complete; admins can add, edit and delete users and tasks in their organization.
+* Password hashes are never returned by the API.
 
 ## Dependencies
 This project was created with the following:
@@ -68,35 +81,46 @@ This project was created with the following:
 * Login as a normal user, sign an organization up, or log in as an admin level user to control functionality across the application. Logins are protected with Bcrypt, JWT tokens, and validator.
 * Styled components used for design in order to have custom React components and cut down on the Javascript build file.
 * Ability to export user and/or task data as an Excel file. 
-* Deployed onto the web using AWS.
+* Deployed as a single Node service on Railway, where Express serves both the API and the React build.
 
 ## Setup
-To clone and run this application, you'll need [Git](https://git-scm.com) and [Node.js](https://nodejs.org/en/download/) (which comes with [npm](http://npmjs.com)) installed on your computer. From your command line:
+To clone and run this application, you'll need [Git](https://git-scm.com), [Node.js](https://nodejs.org/en/download/) 18+ (which comes with [npm](http://npmjs.com)) and a MongoDB database (local, or the Railway MongoDB service exposed through a TCP proxy).
 
 ```bash
 # Clone this repository
-$ git clone https://github.com/NJITFinalFour/TaskMaster.git
+$ git clone https://github.com/jgotti1/New-TaskMasterUSA.git
 
 # Go into the repository
-$ cd TaskMaster
-
-# Go into the client and server folders
-$ cd client
-$ cd server
+$ cd New-TaskMasterUSA
 
 # Install dependencies in both folders
-$ npm install
-
-# Run command in both folders to run app (start with server first)
-$ npm start
-
-Once the dependencies are installed, you will be able to access the frontend at localhost:3000 and the backend at localhost:5000.
+$ (cd server && npm install)
+$ (cd client && npm install)
 ```
 
-## Contributors
-Created by
-* [David Wendt](https://github.com/DavidWendtNJIT)
+Create `server/.env`:
+
+```
+PORT=5001
+CONNECTION_URL=mongodb://<user>:<password>@<host>:<port>/taskMasterUSA?authSource=admin
+SECRET=any-local-secret
+```
+
+`5001` is used instead of `5000` because macOS reserves port 5000 for AirPlay Receiver. The client dev server proxies `/api` to `http://localhost:5001` (see `proxy` in `client/package.json`), so keep the two in sync.
+
+Then run each in its own terminal (start the server first):
+
+```bash
+# Backend (API on localhost:5001); use `npm run dev` for auto-reload with nodemon
+$ cd server && npm start
+
+# Frontend (dev server on localhost:3000)
+$ cd client && npm start
+```
+
+Open http://localhost:3000. The API is under `/api` (`/api/user`, `/api/tasks`, `/api/organizations`).
+
+To test the production setup locally (Express serving the built client), run `npm run build` from the repository root, then `npm start`, and open http://localhost:5001.
+
 * [John Margotti](https://github.com/jgotti1)
-* [Jonathan Shinault](https://github.com/JShinault0620)
-* [Patrick Bowes](https://github.com/bowespa)
 

@@ -1,19 +1,15 @@
 import express from "express";
-import { getTask, createTask, deleteTask, /*deleteAllTasks,*/ updateTask, getOne, findTasksByUser, findTasksByOrg } from "../controller/taskController.js";
-import requireAuth from "../middleware/requireAuth.js";
-
-import bodyParser from "body-parser";
-const jsonParser = bodyParser.json();
+import { createTask, deleteTask, updateTask, getOne, findTasksByUser, findTasksByOrg } from "../controller/taskController.js";
+import requireAuth, { requireAdmin } from "../middleware/requireAuth.js";
 
 const router = express.Router();
-// router.use(requireAuth);
-router.get("/", getTask);
-router.get("/user/:user", jsonParser, findTasksByUser);
-router.get("/organization/:organization", jsonParser, findTasksByOrg);
+
+router.use(requireAuth);
+router.get("/user/:user", findTasksByUser);
+router.get("/organization/:organization", requireAdmin, findTasksByOrg);
 router.get("/:id", getOne);
-router.post("/", createTask);
-router.delete("/:id", deleteTask);
-// router.delete("/", deleteAllTasks);
+router.post("/", requireAdmin, createTask);
+router.delete("/:id", requireAdmin, deleteTask);
 router.patch("/:id", updateTask);
 router.put("/:id", updateTask);
 

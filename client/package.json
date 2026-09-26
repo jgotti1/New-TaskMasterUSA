@@ -3,7 +3,7 @@
   "homepage": "https://usataskmaster.margottiworld.com/",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:5000",
+  "proxy": "http://localhost:5001",
   "dependencies": {
     "@emotion/react": "^11.10.4",
     "@emotion/styled": "^11.10.4",
@@ -12,7 +12,7 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
-    "axios": "^0.27.2",
+    "axios": "^1.20.0",
     "bootstrap": "^5.2.1",
     "date-fns": "^2.29.3",
     "react": "^18.2.0",
@@ -50,11 +50,11 @@
     ]
   },
   "engines": {
-    "node": "v16.15.0",
-    "npm": "8.5.5"
+    "node": ">=18"
   },
   "devDependencies": {
     "@types/react": "^18.0.21",
-    "@types/xlsx": "^0.0.36"
+    "@types/xlsx": "^0.0.36",
+    "typescript": "~4.9.5"
   }
 }
