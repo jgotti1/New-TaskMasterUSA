@@ -43,32 +43,27 @@ export const TaskContextProvider = ({ children }) => {
     tasks: null,
   });
   
+  // Load the right task list whenever the logged-in user changes (admins: whole org, users: own tasks)
   useEffect(() => {
     const fetchTasks = async () => {
-      if (user.isAdmin && user && !state.tasks) {
-        const res = await fetch(
-          `${taskFetchPath}/organization/${user.organization}`,
-          {
-            method: "GET",
-            mode: "cors",
-          }
-        );
-        let data = await res.json();
-        // console.log(data)
-        dispatch({ type: "SET_Tasks", payload: data });
-      } else if (!user.isAdmin && user && !state.tasks){
-        const res = await fetch(
-          `${taskFetchPath}/user/${user._id}`,
-          {
-            method: "GET",
-            mode: "cors",
-          }
-        );
-        let data = await res.json();
-        console.log(data)
-        dispatch({ type: "SET_Tasks", payload: data });
+      if (!user) {
+        dispatch({ type: "SET_Tasks", payload: null });
+        return;
       }
-    }
+
+      const path = user.isAdmin
+        ? `${taskFetchPath}organization/${user.organization}`
+        : `${taskFetchPath}user/${user._id}`;
+
+      const res = await fetch(path, {
+        method: "GET",
+        mode: "cors",
+      });
+      if (!res.ok) return;
+
+      const data = await res.json();
+      dispatch({ type: "SET_Tasks", payload: data });
+    };
     fetchTasks();
   }, [user]);
 

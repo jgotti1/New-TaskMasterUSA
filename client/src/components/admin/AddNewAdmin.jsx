@@ -104,7 +104,7 @@ function AddNewAdmin(props) {
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <Form autocomplete="off" onSubmit={handleSubmit}>
+        <Form autoComplete="off" onSubmit={handleSubmit}>
           <Top>
             <Input
               type="text"
@@ -126,7 +126,7 @@ function AddNewAdmin(props) {
               type="email"
               name="email"
               placeholder="Email"
-              autocomplete="off"
+              autoComplete="off"
               onChange={handleChange}
               value={data.email}
               required
@@ -134,7 +134,7 @@ function AddNewAdmin(props) {
             <PasswordInput
               type="password"
               name="password"
-              autocomplete="off"
+              autoComplete="new-password"
               placeholder="Password"
               onChange={handleChange}
               value={data.password}

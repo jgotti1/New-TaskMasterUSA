@@ -52,3 +52,7 @@ Express serves both the API and the built React app, so the client uses relative
 - **Routing** (`App.js`): `/`, `/signup`, `/login` redirect based on `user`; `/user` is registered only when logged in. `pages/UserHome.jsx` branches on `user.isAdmin` between `components/admin/AdminHome` and `components/user/NormalUserHome`.
 - **Admin components** (`components/admin/`) fetch users of the org directly (not via context) and mutate tasks through `useTasksContext` dispatches plus API calls; Excel export (`xlsx`) is done only in `AdminDashboard`.
 - Styling is styled-components per file, with `responsive.js` exporting a `mobile()` media-query helper.
+
+## Portfolio card
+
+The end of `README.md` has a hidden JSON block (between `portfolio-card:start` and `portfolio-card:end`, inside an HTML comment) used by a portfolio site, plus a screenshot at `docs/preview.jpg`. Keep it in sync when features, tech or URLs change, and keep it valid JSON with no `--` sequences.

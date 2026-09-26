@@ -124,3 +124,49 @@ To test the production setup locally (Express serving the built client), run `np
 
 * [John Margotti](https://github.com/jgotti1)
 
+## Portfolio card
+
+The block below is machine-readable project info for a portfolio site (invisible on GitHub). Keep it in sync when the project, URL or tech changes. To build a card: read this JSON and use `title`, `tagline`/`description`, `thumbnail`, `tech`, and link to `liveUrl` and `repoUrl`.
+
+<!-- portfolio-card:start
+{
+  "title": "TaskMaster",
+  "category": "web app",
+  "tagline": "Task management SaaS where admins assign work to their team and users check it off.",
+  "description": "TaskMaster lets an organization sign up, add its team, and assign prioritized, dated tasks to individual users. Admins get a dashboard of users and tasks (with overdue and in-progress counts) and can export data to Excel, while regular users see only their own tasks and mark them complete. Each organization's data is isolated and every API call is authenticated. To try it, log in as the admin (demo@gmail.com) or as a regular user (mike@gmail.com), both with the password Password123!",
+  "liveUrl": "https://taskmaster-app-production-5e8e.up.railway.app",
+  "repoUrl": "https://github.com/jgotti1/New-TaskMasterUSA",
+  "thumbnail": "https://raw.githubusercontent.com/jgotti1/New-TaskMasterUSA/main/docs/preview.jpg",
+  "tech": [
+    "React",
+    "React Router",
+    "styled-components",
+    "Material UI",
+    "React Bootstrap",
+    "Axios",
+    "Node.js",
+    "Express",
+    "MongoDB",
+    "Mongoose",
+    "JWT",
+    "bcrypt",
+    "SheetJS (xlsx)",
+    "Railway"
+  ],
+  "features": [
+    "Organization sign-up with admin and regular user roles",
+    "Admins add, edit and delete users and tasks with priority and due dates",
+    "Admin dashboard with overdue and in-progress task counts",
+    "Users see only their own tasks and mark them complete",
+    "Export user and task data to Excel",
+    "JWT auth with bcrypt-hashed passwords and per-organization data isolation"
+  ],
+  "platforms": [
+    "desktop",
+    "tablet",
+    "mobile"
+  ],
+  "status": "live",
+  "origin": "Final exam group project for a coding bootcamp (NJIT), built by a team of four; now maintained by John Margotti and redeployed to Railway in 2026."
+}
+portfolio-card:end -->
