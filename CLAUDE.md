@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-TaskMaster is a multi-tenant task management app: organizations sign up, admins assign tasks to users in their org, and users check tasks off. It is two independent npm projects with no root `package.json` (the root `package-lock.json` is a stub):
+TaskMaster is a multi-tenant task management app: organizations sign up, admins assign tasks to users in their org, and users check tasks off. It is two independent npm projects (`client/`, `server/`) plus a small root `package.json` whose only job is the Railway `build`/`start` scripts (the root `package-lock.json` is a stub):
 
 - `client/` — Create React App (React 18, react-router v6, styled-components, MUI/react-bootstrap, axios, xlsx for Excel export)
-- `server/` — Express + Mongoose (ES modules, `"type": "module"`), MongoDB Atlas
+- `server/` — Express + Mongoose (ES modules, `"type": "module"`), MongoDB on Railway
 
 ## Commands
 
@@ -41,16 +41,16 @@ Express serves both the API and the built React app, so the client uses relative
 ### Server (`server/`)
 `server.js` mounts three routers: `/api/user`, `/api/tasks`, `/api/organizations`, each of which is `routes/*.js` → `controller/*.js` → `models/*.js`.
 
-- **Tenancy is by string, not reference.** `User.organization` is the org *name* string; `Task.organization_id` and `Task.user_id` are also plain strings (`Task.user_id` holds the user's Mongo `_id` as a string). Task/user lookups are `GET /api/tasks/organization/:organization`, `GET /api/tasks/user/:user`, `GET /api/user/:organization`. In practice `User.organization` holds the Organization document's `_id` as a string (set by `orgSignup`), and the client uses it to fetch the org name. A middleware in `server.js` collapses duplicate slashes because the client builds some URLs like `/api/tasks//organization/x`.
+- **Tenancy is by string, not reference.** `User.organization` is a string; `Task.organization_id` and `Task.user_id` are also plain strings (`Task.user_id` holds the user's Mongo `_id` as a string). Task/user lookups are `GET /api/tasks/organization/:organization`, `GET /api/tasks/user/:user`, `GET /api/user/:organization`. In practice `User.organization` holds the Organization document's `_id` as a string (set by `orgSignup`), and the client uses it to fetch the org name. A middleware in `server.js` collapses duplicate slashes because the client builds some URLs like `/api/tasks//organization/x`.
 - **Auth is JWT issued at login/signup** (`userController.createToken`, 1-day expiry, signed with `SECRET`). Login returns the whole session object (`email, token, userFirstName, userLastName, isAdmin, organization, _id`), which the client stores verbatim.
 - **Authorization is enforced server-side** by `middleware/requireAuth.js` (verifies the Bearer token, loads `{_id, organization, isAdmin}` from the DB into `req.user`) and its `requireAdmin` companion. Only `POST /api/user/login` and `POST /api/organizations/signup` are public. Every controller scopes queries to `req.user.organization`; regular users can read only themselves and their own tasks and can only toggle `isComplete` on their own tasks; admins manage users/tasks in their own org only. The organization on signup/create requests is taken from the token, never the request body.
 - Signup/login validation (email format, `validator.isStrongPassword`, bcrypt hashing) lives in static methods on `userModel.js`.
 - `updateUser` whitelists `first_name, last_name, email, isAdmin`; passwords and `organization` cannot be changed through it. `userModel` strips `password` from all JSON output via a `toJSON` transform, so never rely on `select("-password")`, but never remove that transform either.
 
 ### Client (`client/src/`)
-- **Providers** (in `index.js`): `AuthContextProvider` → `TaskContextProvider` → `App`. Auth state is restored from `localStorage["user"]` in a `useEffect`; `api/authInterceptors.js` (imported in `index.js`) wraps `window.fetch` and axios so every same-origin `/api` request automatically carries `Authorization: Bearer <token>`; login/signup/logout live in `hooks/useLogin|useSignup|useLogout`. `TaskContextProvider` reads `user` from auth context and, on user change, fetches the org's tasks (admin) or the user's tasks (non-admin) into a reducer (`SET_/CREATE_/DELETE_/EDIT_Tasks`). It dereferences `user.isAdmin` without a null guard, so it relies on being rendered when `user` is set/restored. `UserContext` is defined but not wired into `index.js`.
+- **Providers** (in `index.js`): `AuthContextProvider` → `TaskContextProvider` → `App`. Auth state is restored from `localStorage["user"]` in a `useEffect`; `api/authInterceptors.js` (imported in `index.js`) wraps `window.fetch` and axios so every same-origin `/api` request automatically carries `Authorization: Bearer <token>`; login/signup/logout live in `hooks/useLogin|useSignup|useLogout`. `TaskContextProvider` reads `user` from auth context and, on user change, fetches the org's tasks (admin) or the user's tasks (non-admin) into a reducer (`SET_/CREATE_/DELETE_/EDIT_Tasks`). It refetches whenever `user` changes and clears the tasks when `user` is null (logout / before `localStorage` is restored). `UserContext` is defined but not wired into `index.js`.
 - **Routing** (`App.js`): `/`, `/signup`, `/login` redirect based on `user`; `/user` is registered only when logged in. `pages/UserHome.jsx` branches on `user.isAdmin` between `components/admin/AdminHome` and `components/user/NormalUserHome`.
-- **Admin components** (`components/admin/`) fetch users of the org directly (not via context) and mutate tasks through `useTasksContext` dispatches plus API calls; Excel export (`xlsx`) is done only in `AdminDashboard`.
+- **Admin components** (`components/admin/`) fetch users of the org directly (not via context) and mutate tasks through `useTasksContext` dispatches plus API calls; Excel export (`xlsx`) is done only in `AdminDashboard`; its two export functions map records to the same readable columns as the on-screen tables (names, formatted dates, no database ids), so keep them in sync when table columns change.
 - Styling is styled-components per file, with `responsive.js` exporting a `mobile()` media-query helper.
 
 ## Portfolio card

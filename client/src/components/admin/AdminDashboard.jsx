@@ -264,19 +264,43 @@ const AdminDashboard = () => {
     }
   };
 
-  //export tasks to excel
-  const exportTasksExcel = () => {
+  // Build a sheet with the given column widths and download it as an .xlsx file
+  const downloadSheet = (rows, widths, fileName) => {
     const wb = XLSX.utils.book_new(),
-      ws = XLSX.utils.json_to_sheet(allTasks);
+      ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = widths.map((wch) => ({ wch }));
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    XLSX.writeFile(wb, "TaskMasterUSA_All_Tasks.xlsx");
+    XLSX.writeFile(wb, fileName);
   };
-  //export users to excel
+
+  const capitalize = (text) => (text ? text.charAt(0).toUpperCase() + text.slice(1) : "");
+
+  //export tasks to excel (same columns as the tasks table, with names instead of database ids)
+  const exportTasksExcel = () => {
+    const rows = allTasks.map((task) => {
+      const worker = users.find((w) => w._id === task.user_id);
+      return {
+        "Due Date": format(new Date(task.due_date.replace(/-/g, "/")), "MM/dd/yyyy"),
+        Created: format(new Date(task.createdAt), "MM/dd/yyyy"),
+        Priority: capitalize(task.priority),
+        "Assigned To": worker ? `${worker.first_name} ${worker.last_name}` : "Nobody",
+        "Task Name": task.taskName,
+        Notes: task.notes || "",
+        "Completed?": task.isComplete === "YES" ? "Yes" : "No",
+      };
+    });
+    downloadSheet(rows, [12, 12, 10, 22, 34, 50, 12], "TaskMasterUSA_All_Tasks.xlsx");
+  };
+  //export users to excel (same columns as the users table, without database ids)
   const exportUsersExcel = () => {
-    const wb = XLSX.utils.book_new(),
-      ws = XLSX.utils.json_to_sheet(users);
-    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    XLSX.writeFile(wb, "TaskMasterUSA_All_Users.xlsx");
+    const rows = users.map((worker) => ({
+      "Last Name": worker.last_name,
+      "First Name": worker.first_name,
+      Email: worker.email,
+      Role: worker.isAdmin ? "Admin" : "User",
+      Created: format(new Date(worker.createdAt), "MM/dd/yyyy"),
+    }));
+    downloadSheet(rows, [18, 18, 32, 10, 12], "TaskMasterUSA_All_Users.xlsx");
   };
 
   const findWorkerName = (task) => {
